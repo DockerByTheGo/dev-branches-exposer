@@ -1,36 +1,50 @@
-import { JsonWriter } from "../internals/json-writer/main"
+import { z } from "zod"
+import { g, JsonWriter, SimpleJSONWriter } from "../internals/json-writer/main"
+import { buildFromLatestCommit } from "../buildDocker"
+import config from "../../config"
+export const DeploymentInstanceSchema = z.object({
+    name: z.string().nonempty(),
+    dockerImage: z.string().nonempty(),
+    domain: z.string().nonempty()
+})
 
-interface DeploymentInstance {
-    name: string,
-    dockerImgName: string
-}
+export const DeploymentsJson = z.object({
+    deployments: z.array(DeploymentInstanceSchema)
+}) 
+export type DeploymentInstance = z.infer<typeof DeploymentInstanceSchema> 
 
-interface IDeployment {
-    deploy(info: DeploymentInstance): void
-    getDeployments(): Record<string, DeploymentInstance>
-    removeDeployment(name: DeploymentInstance["name"]): void
-}
-class DeploymentConfigWriter extends JsonWriter<Record<string, DeploymentInstance>,"ff.json"> {}
+ 
 
-class Deployment implements IDeployment {
-    private stateWriter: DeploymentConfigWriter
-    constructor(){
-        this.stateWriter =  DeploymentConfigWriter.new("./ff.json")
-    }
+class Deployment {
+    private stateWriter = g
     
     
-    deploy(info: DeploymentInstance): void {
-        this.stateWriter.create({
-            [info.name]: info
+    deploy(info: ): void {
+        buildFromLatestCommit({
+            repoUrl: info.
         })
+        this.stateWriter.modify(v => {
+            return {
+                deployments: [...v["deployments"], info]
+            }
+        })
+
     }
     getDeployments(): Record<string, DeploymentInstance> {
-        return this.stateWriter.getAll()
+        return this.stateWriter
+        .get().deployments
+        .reduce((prev, curr) => {
+            return {
+                ...prev,
+                [curr.name]: curr
+            }
+        },{} as Record<string, DeploymentInstance>)
     }
+    
     removeDeployment(name: DeploymentInstance["name"]): void {
-        this.stateWriter.delete({
-            name
-        })
+        this.stateWriter
     }
     
 }
+
+export const deploymentService = new Deployment()

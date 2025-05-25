@@ -1,18 +1,21 @@
 import * as fs from 'fs';
 import * as path from 'path';
-type JSON<T extends string>  = T extends  `${infer T}.json` ? string : never
+import { z, type ZodRawShape } from 'zod';
+import type { ZodObject } from 'zod';
+import { DeploymentInstanceSchema, DeploymentsJson } from '../../services/deployments';
+type IsJson<T extends string>  = T extends  `${infer T}.json` ? string : never
 export class JsonWriter<T extends Record<string, unknown>, Filename extends string> {
   private filePath: string;
   private data: T[];
 
-  protected constructor(filePath: JSON<Filename>) {
+  protected constructor(filePath: IsJson<Filename>) {
     this.filePath = filePath;
     this.data = [];
 
     this.load();
   }
 
-  static new<T extends Record<string, unknown>, Filename extends string>(file: JSON<Filename>): Filename extends string ? JsonWriter<T, Filename> : never{
+  static new<T extends Record<string, unknown>, Filename extends string>(file: IsJson<Filename>): Filename extends string ? JsonWriter<T, Filename> : never{
     return new JsonWriter(file)
   }
 
@@ -60,3 +63,44 @@ export class JsonWriter<T extends Record<string, unknown>, Filename extends stri
     return [...this.data];
   }
 }
+
+
+
+
+export class SimpleJSONWriter<
+  T extends ZodObject<ZodRawShape>,
+  Raw extends z.infer<T> = z.infer<T>
+>{
+  private object: Raw // keeping it inmemory for faster access 
+  private file: string
+  private schema: T
+  
+  private constructor(schema: T,filename: string){
+    this.object = schema.parse(JSON.parse(fs.readFileSync(filename, "utf-8")))
+    this.schema = schema
+    this.file = filename
+  }
+
+  get(): Raw{
+    return this.object 
+  }
+
+  sync(){
+    fs.writeFileSync(this.file, JSON.stringify(this.object))
+  }
+  modify(func: (v: Raw) => Raw){
+    this.object = func(this.object)
+    this.sync()
+  }
+  
+  static new<
+  T extends ZodObject<ZodRawShape>,
+   Filename extends string,
+   >(file: Filename, schema: T): IsJson<Filename> extends string
+    ? SimpleJSONWriter<T>
+    : never {
+    return new SimpleJSONWriter(schema,file)
+  }
+}
+
+export const g = SimpleJSONWriter.new("./s.json", DeploymentsJson)

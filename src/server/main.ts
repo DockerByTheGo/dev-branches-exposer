@@ -2,7 +2,10 @@ import { Elysia } from 'elysia';
 import { type PushEvent, type PullRequestEvent } from '@octokit/webhooks-types';
 import config from "../../config"
 import { randomUUIDv7 } from 'bun';
+import { deploymentService } from '../services/deployments';
 const app = new Elysia();
+
+
 
 app.post('/git-webhook', async ({ request, body }) => {
   const eventType = request.headers.get('x-github-event');
@@ -16,7 +19,7 @@ app.post('/git-webhook', async ({ request, body }) => {
     const payload = body as PushEvent;
     const lastCommit = payload.commits[payload.commits.length - 1];
 
-    runYourHandler({
+    handleWebhook({
       type: 'push',
       branch: payload.ref.replace('refs/heads/', ''),
       commit: lastCommit,
@@ -30,7 +33,7 @@ app.post('/git-webhook', async ({ request, body }) => {
     if (payload.action === 'closed' && payload.pull_request.merged) {
       const lastCommitSha = payload.pull_request.merge_commit_sha;
 
-      runYourHandler({
+      handleWebhook({
         type: 'merge',
         branch: payload.pull_request.base.ref,
         commit: {
@@ -45,33 +48,18 @@ app.post('/git-webhook', async ({ request, body }) => {
   return new Response(null, { status: 200 });
 });
 
-function getCurrentDeployments(): string[] {
-    return []
-}
-
-function deploy(dockerfile: string){
-    while (true) {
-        const subdomain  = randomUUIDv7();
-        subdomain.slice(0,12)
-        if(getCurrentDeployments().indexOf(subdomain) > -1){ // e.g. it is not already in use
-            // deploy
-            break 
-        }
-    }
-}
-
-function runYourHandler(data: {
+function handleWebhook(data: {
   type: 'push' | 'merge',
   branch: string,
   commit: { id: string; message: string },
   rawEvent: any
 }) {
     config()
-  console.log(`📦 Event Type: ${data.type}`);
-  console.log(`🔀 Branch: ${data.branch}`);
-  console.log(`📝 Commit: ${data.commit.id} - ${data.commit.message}`);
+    deploymentService.deploy({
+      name: data.commit.message,
+      dockerImage
+    }) 
 
 }
 
 app.listen(3000);
-console.log('🚀 Listening for GitHub events at http://localhost:3000/git-webhook');
