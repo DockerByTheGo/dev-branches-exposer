@@ -88,11 +88,3 @@ export async function buildFromCommit(v: {
 
   console.log(`[SUCCESS] Built and started Docker image '${commitId}' from commit '${commitId}'`);
 }
-
-({
-  "branch": "master",
-  "commitId": "aee9cee02eeb6f9ef3115a0c8fc4148e21bd729c",
-  "localPath": ".//Desktop/Repos",
-  "port": 8000,
-  "repoUrl": "https://github.com/briangershon/simple-express-docker.git"
-})

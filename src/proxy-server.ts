@@ -2,7 +2,7 @@ import express from 'express';
 import { createProxyServer } from 'http-proxy';
 import type { Request, Response } from 'express';
 import { g } from './internals/json-writer/main';
-import { ifNotNone } from '@custom-express/better-standard-library';
+import { ifNotNone, tap } from '@custom-express/better-standard-library';
 
 const app = express();
 const proxy = createProxyServer({});
@@ -13,8 +13,9 @@ app.use(express.json());
 
 function handleSubdomain(subdomain: string): number {
   // Example: return port based on subdomain
-  return 4000 + subdomain.length; // example logic
-  ifNotNone(g.get().deployments.find(v => {v.domain === subdomain}))
+  console.log(subdomain)
+  
+  return (tap(g.get().deployments, console.log).find(v => v.domain === subdomain))?.port
 }
 
 function getSubdomain(host: string): string | null {
