@@ -56,8 +56,8 @@ function handleWebhook(data: {
 }) {
     config()
     deploymentService.deploy({
-      name: data.commit.message,
-      dockerImage
+      branch: data.branch,
+      commitId: data.commit.id,
     }) 
 
 }

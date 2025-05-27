@@ -6,24 +6,6 @@ import * as net from 'net';
 
 const git = simpleGit();
 
-/*
-i would rather not open a connection 
-ChatGPT said:
-
-Got it — if you want to find a free port without opening a socket, there's no 100% reliable way to guarantee it's free at the moment of actual use, because another process could bind to it right after your check.
-
-But if you still want a "best-effort" solution without opening a connection, here’s a function that:
-
-    Gets all used ports from ss -tuln
-
-    Picks a random unused port from a specified range (default: 1024–65535)
-
-⚠️ Caveat
-
-    This is inherently race-prone — a port that's free now may be taken milliseconds later. Use this only if you cannot open a socket, and race conditions are acceptable.
-
-! thats why we open a port 
-*/
 export function getFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
@@ -43,48 +25,42 @@ export function getFreePort(): Promise<number> {
   });
 }
 
-interface BuildDockerOptions {
-  repoUrl: string;
-  branch: string;
-  localPath: string;
-  dockerTag: string; // e.g., "my-image:latest"
-  dockerfilePath?: string; // default is Dockerfile in root
-}
 
 /**
- * Pulls latest commit from a branch and builds the Dockerfile inside it.
+ * Clones the repo, checks out specific commit, and builds Docker image.
  */
-export async function buildFromLatestCommit({
-  repoUrl,
-  branch,
-  localPath,
-  dockerTag,
-  dockerfilePath,
-}: BuildDockerOptions): Promise<void> {
-  // Clone or pull the latest commit
-  if (fs.existsSync(localPath)) {
-    console.log(`[INFO] Repository exists. Pulling latest from '${branch}'...`);
-    await git.cwd(localPath).checkout(branch);
-    await git.cwd(localPath).pull('origin', branch);
-  } else {
+export async function buildFromCommit(v: {
+  repoUrl: string,
+  branch: string,
+  commitId: string,
+  localPath: string,
+  port:number 
+}): Promise<void> {
+  const {localPath, repoUrl, branch, commitId, port} = v
+  if (!fs.existsSync(localPath)) {
     console.log(`[INFO] Cloning '${branch}' from '${repoUrl}'...`);
     await git.clone(repoUrl, localPath, ['--branch', branch, '--single-branch']);
   }
 
-  const dockerfile = dockerfilePath || path.join(localPath, 'Dockerfile');
+  await git.cwd(localPath).fetch();
+  await git.cwd(localPath).checkout(commitId);
+
+  const dockerfile = path.join(localPath, 'Dockerfile');
   if (!fs.existsSync(dockerfile)) {
     throw new Error(`[ERROR] Dockerfile not found at: ${dockerfile}`);
   }
 
-  const dockerfileContent = fs.readFileSync("Dockerfile").toLocaleString()
-  const port = dockerfileContent.slice(
-    dockerfileContent.indexOf("EXPOSE")+("EXPOSE").length,
-     dockerfileContent.slice(dockerfileContent.indexOf("EXPOSE")).indexOf("/n")
-    )
+  const dockerfileContent = fs.readFileSync(dockerfile, 'utf-8');
 
-  
-  const freePort = await getFreePort() 
-  const buildCommand = `docker build -f ${dockerfile} -t ${dockerTag} -p ${freePort}:${port} ${localPath}`;
+  const exposeMatch = dockerfileContent.match(/EXPOSE\s+(\d+)/);
+  if (!exposeMatch) {
+    throw new Error(`[ERROR] No EXPOSE directive found in Dockerfile`);
+  }
+
+  const containerPort = exposeMatch[1];
+
+  const buildCommand = `docker build -f ${dockerfile} -t ${commitId} ${localPath}`;
+  const runCommand = `docker run -d -p ${port}:${containerPort} ${commitId}`;
 
   console.log(`[INFO] Running: ${buildCommand}`);
   await new Promise<void>((resolve, reject) => {
@@ -98,5 +74,25 @@ export async function buildFromLatestCommit({
     });
   });
 
-  console.log(`[SUCCESS] Built Docker image '${dockerTag}' from branch '${branch}'`);
+  console.log(`[INFO] Running: ${runCommand}`);
+  await new Promise<void>((resolve, reject) => {
+    exec(runCommand, (err, stdout, stderr) => {
+      if (err) {
+        console.error(`[ERROR] Docker run failed:\n${stderr}`);
+        return reject(err);
+      }
+      console.log(stdout);
+      resolve();
+    });
+  });
+
+  console.log(`[SUCCESS] Built and started Docker image '${commitId}' from commit '${commitId}'`);
 }
+
+({
+  "branch": "master",
+  "commitId": "aee9cee02eeb6f9ef3115a0c8fc4148e21bd729c",
+  "localPath": ".//Desktop/Repos",
+  "port": 8000,
+  "repoUrl": "https://github.com/briangershon/simple-express-docker.git"
+})

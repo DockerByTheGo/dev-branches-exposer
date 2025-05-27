@@ -2,7 +2,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { z, type ZodRawShape } from 'zod';
 import type { ZodObject } from 'zod';
-import { DeploymentInstanceSchema, DeploymentsJson } from '../../services/deployments';
+import { DeploymentsJson } from '../../scehams-and-types/main';
+import { homedir } from 'os';
+import { tap } from '@custom-express/better-standard-library';
 type IsJson<T extends string>  = T extends  `${infer T}.json` ? string : never
 export class JsonWriter<T extends Record<string, unknown>, Filename extends string> {
   private filePath: string;
@@ -76,7 +78,7 @@ export class SimpleJSONWriter<
   private schema: T
   
   private constructor(schema: T,filename: string){
-    this.object = schema.parse(JSON.parse(fs.readFileSync(filename, "utf-8")))
+    this.object = schema.parse(JSON.parse(tap(fs.readFileSync(filename, "utf-8").toString(), v => console.log(v))))
     this.schema = schema
     this.file = filename
   }
@@ -103,4 +105,4 @@ export class SimpleJSONWriter<
   }
 }
 
-export const g = SimpleJSONWriter.new("./s.json", DeploymentsJson)
+export const g = SimpleJSONWriter.new(path.join(homedir(),".deploy/config.json"), DeploymentsJson)

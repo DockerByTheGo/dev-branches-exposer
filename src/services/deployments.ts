@@ -1,17 +1,12 @@
 import { z } from "zod"
 import { g, JsonWriter, SimpleJSONWriter } from "../internals/json-writer/main"
-import { buildFromLatestCommit } from "../buildDocker"
 import config from "../../config"
-export const DeploymentInstanceSchema = z.object({
-    name: z.string().nonempty(),
-    dockerImage: z.string().nonempty(),
-    domain: z.string().nonempty()
-})
+import {SharedProperties} from "@custom-express/better-standard-library"
+import { buildFromCommit, getFreePort } from "../buildDocker"
+import { repoUrl } from "../../metadata"
+import type { DeploymentInstance } from "../scehams-and-types/main"
 
-export const DeploymentsJson = z.object({
-    deployments: z.array(DeploymentInstanceSchema)
-}) 
-export type DeploymentInstance = z.infer<typeof DeploymentInstanceSchema> 
+
 
  
 
@@ -19,13 +14,19 @@ class Deployment {
     private stateWriter = g
     
     
-    deploy(info: ): void {
-        buildFromLatestCommit({
-            repoUrl: info.
-        })
+    async deploy(info: {branch: string, commitId: string}){
+        const freePort = await getFreePort();
+        
+        buildFromCommit({
+            repoUrl: repoUrl,
+            branch: info.branch,
+            commitId: info.commitId,
+            localPath: "./testing-deploys",
+            port: freePort
+        });
         this.stateWriter.modify(v => {
             return {
-                deployments: [...v["deployments"], info]
+                deployments: [...v["deployments"], {domain: info.commitId,port: freePort }]
             }
         })
 
@@ -36,15 +37,15 @@ class Deployment {
         .reduce((prev, curr) => {
             return {
                 ...prev,
-                [curr.name]: curr
+                [curr.domain]: curr
             }
         },{} as Record<string, DeploymentInstance>)
-    }
-    
-    removeDeployment(name: DeploymentInstance["name"]): void {
-        this.stateWriter
     }
     
 }
 
 export const deploymentService = new Deployment()
+deploymentService.deploy({
+  "branch": "master",
+  "commitId": "aee9cee02eeb6f9ef3115a0c8fc4148e21bd729c",
+})
