@@ -3,6 +3,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import simpleGit from 'simple-git';
 import * as net from 'net';
+import { GroupBuilder } from '@custom-express/better-standard-library';
+import { z } from 'zod';
 
 const git = simpleGit();
 
@@ -29,14 +31,15 @@ export function getFreePort(): Promise<number> {
 /**
  * Clones the repo, checks out specific commit, and builds Docker image.
  */
-export async function buildFromCommit(v: {
+
+async function cloneRepo(v:{
   repoUrl: string,
   branch: string,
   commitId: string,
   localPath: string,
-  port:number 
-}): Promise<void> {
-  const {localPath, repoUrl, branch, commitId, port} = v
+}){
+
+  const {localPath, repoUrl, branch, commitId } = v
   if (!fs.existsSync(localPath)) {
     console.log(`[INFO] Cloning '${branch}' from '${repoUrl}'...`);
     await git.clone(repoUrl, localPath, ['--branch', branch, '--single-branch']);
@@ -45,26 +48,24 @@ export async function buildFromCommit(v: {
   await git.cwd(localPath).fetch();
   await git.cwd(localPath).checkout(commitId);
 
-  const dockerfile = path.join(localPath, 'Dockerfile');
-  if (!fs.existsSync(dockerfile)) {
-    throw new Error(`[ERROR] Dockerfile not found at: ${dockerfile}`);
-  }
+}
 
-  const dockerfileContent = fs.readFileSync(dockerfile, 'utf-8');
+async function buildDockerImage(v: {
+  name: string, 
+  dockerfile: string,
+  localPath: string
+}) {
+  const {dockerfile, localPath, name} = v
 
-  const exposeMatch = dockerfileContent.match(/EXPOSE\s+(\d+)/);
-  if (!exposeMatch) {
-    throw new Error(`[ERROR] No EXPOSE directive found in Dockerfile`);
-  }
+  const buildCommand = `docker build -f ${dockerfile} -t ${name} ${localPath}`;
+  await Exec(buildCommand)
+}
 
-  const containerPort = exposeMatch[1];
 
-  const buildCommand = `docker build -f ${dockerfile} -t ${commitId} ${localPath}`;
-  const runCommand = `docker run -d -p ${port}:${containerPort} ${commitId}`;
+async function Exec(command: string){
 
-  console.log(`[INFO] Running: ${buildCommand}`);
   await new Promise<void>((resolve, reject) => {
-    exec(buildCommand, (err, stdout, stderr) => {
+    exec(command, (err, stdout, stderr) => {
       if (err) {
         console.error(`[ERROR] Docker build failed:\n${stderr}`);
         return reject(err);
@@ -73,6 +74,47 @@ export async function buildFromCommit(v: {
       resolve();
     });
   });
+
+}
+
+const dockerGroup = new GroupBuilder([], z.object({
+  repoUrl: z.string(),
+  branch: z.string(), 
+  commitId: z.string(), 
+  localPath: z.string(),
+  port: z.number() 
+})
+)
+
+export async function buildFromCommit(v: {
+  repoUrl: string,
+  branch: string,
+  commitId: string,
+  localPath: string,
+  port:number 
+}): Promise<void> {
+  const {localPath, repoUrl, branch, commitId, port} = v
+  const dockerfile = path.join(localPath, 'Dockerfile');
+  if (!fs.existsSync(dockerfile)) {
+    throw new Error(`[ERROR] Dockerfile not found at: ${dockerfile}`);
+  }
+  cloneRepo(v)
+  buildDockerImage({
+    localPath,
+    name: commitId,
+    dockerfile: dockerfile,
+
+  })
+  
+  const dockerfileContent = fs.readFileSync(dockerfile, 'utf-8');
+
+  const exposeMatch = dockerfileContent.match(/EXPOSE\s+(\d+)/);
+  if (!exposeMatch) {
+    throw new Error(`[ERROR] No EXPOSE directive found in Dockerfile`);
+  }
+
+  const containerPort = exposeMatch[1];
+  const runCommand = `docker run -d -p ${port}:${containerPort} ${commitId}`;
 
   console.log(`[INFO] Running: ${runCommand}`);
   await new Promise<void>((resolve, reject) => {
