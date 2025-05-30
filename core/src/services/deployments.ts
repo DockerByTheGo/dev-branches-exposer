@@ -12,7 +12,6 @@ import { exec } from "child_process"
  const execAsync = promisify(exec);
 
 class Deployment {
-    private stateWriter = g;
 
     /**
      * Change the domain (subdomain) for a deployment
@@ -116,8 +115,3 @@ export const changeDeploymentDomain = (
 export const removeDeployment = (
     domain: string
 ) => deploymentService.removeDeployment(domain);
-
-// deploymentService.deploy({
-//   "branch": "master",
-//   "commitId": "aee9cee02eeb6f9ef3115a0c8fc4148e21bd729c",
-// })
