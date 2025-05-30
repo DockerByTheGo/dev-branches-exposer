@@ -41,7 +41,7 @@ constructor() {
     }
   }
     
-    async deploy(info: {branch: string, commitId: string}){
+    async deploy(info: {branch: string, commitId: string, domain: string}){
         const freePort = await getFreePort();
         
         buildFromCommit({
@@ -53,7 +53,7 @@ constructor() {
         });
         this.stateWriter.modify(v => {
             return {
-                deployments: [...v["deployments"], {domain: info.commitId,port: freePort, dockerimage: info.commitId}]
+                deployments: [...v["deployments"], {domain: info.domain ,port: freePort, dockerimage: info.commitId}]
             }
         })
 
