@@ -12,7 +12,6 @@ const proxy = createProxyServer({});
 app.use(express.json());
 
 function handleSubdomain(subdomain: string): number {
-  // Example: return port based on subdomain
   console.log(subdomain)
   
   return (tap(g.get().deployments, console.log).find(v => v.domain === subdomain))?.port
@@ -27,7 +26,6 @@ function getSubdomain(host: string): string | null {
 app.use((req: Request, res: Response) => {
   const host = req.headers.host || '';
   const subdomain = getSubdomain(host);
-
   if (!subdomain) {
     return res.status(400).json({ error: 'No subdomain in host header' });
   }

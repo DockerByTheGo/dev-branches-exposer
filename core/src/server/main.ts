@@ -54,12 +54,11 @@ function handleWebhook(data: {
   commit: { id: string; message: string },
   rawEvent: any
 }) {
-    config()
-    deploymentService.deploy({
-      branch: data.branch,
-      commitId: data.commit.id,
-    }) 
+    config({branchName: data.branch})
+    .ifCanBeUnpacked(val =>
+      deploymentService.deploy({branch: data.branch,commitId: data.commit.id, domain: val})
+    ) 
 
 }
 
-app.listen(3000);
+app.listen(5000);
