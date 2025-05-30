@@ -3,9 +3,10 @@ import { type PushEvent, type PullRequestEvent } from '@octokit/webhooks-types';
 import config from "../../config"
 import { randomUUIDv7 } from 'bun';
 import { deploymentService } from '../services/deployments';
+import { handleWebhook } from '../handleGithubWebhook';
+
+
 const app = new Elysia();
-
-
 
 app.post('/git-webhook', async ({ request, body }) => {
   const eventType = request.headers.get('x-github-event');
@@ -48,17 +49,5 @@ app.post('/git-webhook', async ({ request, body }) => {
   return new Response(null, { status: 200 });
 });
 
-function handleWebhook(data: {
-  type: 'push' | 'merge',
-  branch: string,
-  commit: { id: string; message: string },
-  rawEvent: any
-}) {
-    config({branchName: data.branch})
-    .ifCanBeUnpacked(val =>
-      deploymentService.deploy({branch: data.branch,commitId: data.commit.id, domain: val})
-    ) 
-
-}
 
 app.listen(5000);

@@ -15,7 +15,7 @@ class Deployment {
     private stateWriter = g
     
 constructor() {
-    this.recoverDeployments(); // call the async method
+    this.recoverDeployments(); 
   }
 
   private async recoverDeployments() {
