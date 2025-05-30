@@ -1,8 +1,9 @@
 import express from 'express';
 import { createProxyServer } from 'http-proxy';
 import type { Request, Response } from 'express';
-import { g } from './internals/json-writer/main';
+import { g } from '../internals/json-writer/main';
 import { ifNotNone, tap } from '@custom-express/better-standard-library';
+import { getSubdomain } from './utils/main';
 
 const app = express();
 const proxy = createProxyServer({});
@@ -11,16 +12,10 @@ const proxy = createProxyServer({});
 
 app.use(express.json());
 
-function handleSubdomain(subdomain: string): number {
+function getPortFromSubdomain(subdomain: string): number {
   console.log(subdomain)
   
   return (tap(g.get().deployments, console.log).find(v => v.domain === subdomain))?.port
-}
-
-function getSubdomain(host: string): string | null {
-  const domainParts = host.split('.');
-  if (domainParts.length < 3) return null;
-  return domainParts[0];
 }
 
 app.use((req: Request, res: Response) => {
@@ -30,7 +25,7 @@ app.use((req: Request, res: Response) => {
     return res.status(400).json({ error: 'No subdomain in host header' });
   }
 
-  const port = handleSubdomain(subdomain);
+  const port = getPortFromSubdomain(subdomain);
   const target = `http://localhost:${port}`;
 
   console.log(`[INFO] Proxying ${req.method} ${req.url} to ${target}`);

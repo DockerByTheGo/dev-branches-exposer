@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { app } from '../src/proxy-server';
+import { app } from '../src/proxy-server/proxy-server';
 import { JsonWriter } from '../src/internals/json-writer/main';
-import { handleSubdomain } from '../src/proxy-server';
+import { handleSubdomain } from '../src/proxy-server/proxy-server';
 
 // Mock the JsonWriter
 vi.mock('../src/internals/json-writer/main');
