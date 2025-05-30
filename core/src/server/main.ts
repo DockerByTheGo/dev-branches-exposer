@@ -64,4 +64,50 @@ app.post("/git-webhook", async ({ request, body }) => {
 
 });
 
+// --- ADMIN API ENDPOINTS ---
+
+app.post("/admin/change-domain", async ({ body }) => {
+  const { oldDomain, newDomain } = body;
+  if (!oldDomain || !newDomain) {
+    return new Response(JSON.stringify({ success: false, error: "Missing parameters" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const changed = deploymentService.changeDomain(oldDomain, newDomain);
+  if (changed) {
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } else {
+    return new Response(JSON.stringify({ success: false, error: "Domain not found or new domain already exists" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+});
+
+app.post("/admin/remove-deployment", async ({ body }) => {
+  const { domain } = body;
+  if (!domain) {
+    return new Response(JSON.stringify({ success: false, error: "Missing domain parameter" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const removed = deploymentService.removeDeployment(domain);
+  if (removed) {
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } else {
+    return new Response(JSON.stringify({ success: false, error: "Domain not found" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+});
+
 app.listen(5000);
