@@ -3,8 +3,9 @@ import { type PushEvent, type PullRequestEvent } from "@octokit/webhooks-types";
 import config from "../../config";
 import { randomUUIDv7 } from "bun";
 import { deploymentService } from "../services/deployments";
-import { handleWebhook } from "../handleGithubWebhook";
 import { OneOf, Try } from "@custom-express/better-standard-library";
+import { match } from "ts-pattern";
+import { handleWebhook } from "../internals/handleGithubWebhook";
 
 const app = new Elysia();
 
@@ -24,11 +25,10 @@ app.post("/git-webhook", async ({ request, body }) => {
       return new Response(null, { status: 400 });
     },
     ifNotNone: (v: "push" | "pull_request") => {
-      switch (v) {
-        case "pull_request":
+      match(v)
+        .with("pull_request", () => {
           const payload = body as PullRequestEvent;
 
-          // Only act on successful merges
           if (isMergeSuccessful(payload)) {
             const lastCommitSha = payload.pull_request.merge_commit_sha;
 
@@ -42,27 +42,26 @@ app.post("/git-webhook", async ({ request, body }) => {
               rawEvent: payload,
             });
           }
-          break;
-        
-        case "push":
-              const payload = body as PushEvent;
-    const lastCommit = payload.commits[payload.commits.length - 1];
+        })
+        .with("push", () => {
+          const payload = body as PushEvent;
+          const lastCommit = payload.commits[payload.commits.length - 1];
 
-    handleWebhook({
-      type: "push",
-      branch: payload.ref.replace("refs/heads/", ""),
-      commit: lastCommit,
-      rawEvent: payload,
-    });
-      }
+          handleWebhook({
+            type: "push",
+            branch: payload.ref.replace("refs/heads/", ""),
+            commit: lastCommit,
+            rawEvent: payload,
+          });
+        })
+        .otherwise(() => {
+          // Optionally handle unknown event types
+        });
+      return new Response(null, { status: 200 });
     },
   });
 
-  if (eventType === "push") {
-  } else if (eventType === "pull_request") {
-  }
 
-  return new Response(null, { status: 200 });
 });
 
 app.listen(5000);
