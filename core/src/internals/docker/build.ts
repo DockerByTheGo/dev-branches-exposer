@@ -27,11 +27,6 @@ export function getFreePort(): Promise<number> {
   });
 }
 
-
-/**
- * Clones the repo, checks out specific commit, and builds Docker image.
- */
-
 async function cloneRepo(v:{
   repoUrl: string,
   branch: string,
@@ -77,21 +72,36 @@ async function Exec(command: string){
 
 }
 
-const dockerGroup = new GroupBuilder([], z.object({
-  repoUrl: z.string(),
-  branch: z.string(), 
-  commitId: z.string(), 
-  localPath: z.string(),
-  port: z.number() 
-})
-)
+// const group = new GroupBuilder([], z.object({ // remake all the docker function bs with this composer so that you pass the funcs only once
+//   repoUrl: z.string(),
+//   branch: z.string(), 
+//   commitId: z.string(), 
+//   localPath: z.string(),
+//   port: z.number() 
+// }))
+//     .addFunc((state) => {
+//         state.dockerImage = "dockerImage";
+//     })
+//     .addFunc((state) => {
+//         state.port = 1;
+//     })
+//     .build();
+
+export async function runContainer(v: {
+  port: number,
+  containerPort: string,
+  name: string
+}) {
+  const {port, containerPort, name} = v;
+  Exec(`docker run -d -p ${port}:${containerPort} ${name}`)
+}
 
 export async function buildFromCommit(v: {
   repoUrl: string,
   branch: string,
   commitId: string,
   localPath: string,
-  port:number 
+  port: number 
 }): Promise<void> {
   const {localPath, repoUrl, branch, commitId, port} = v
   const dockerfile = path.join(localPath, 'Dockerfile');
@@ -102,8 +112,7 @@ export async function buildFromCommit(v: {
   buildDockerImage({
     localPath,
     name: commitId,
-    dockerfile: dockerfile,
-
+    dockerfile: dockerfile
   })
   
   const dockerfileContent = fs.readFileSync(dockerfile, 'utf-8');
@@ -114,19 +123,11 @@ export async function buildFromCommit(v: {
   }
 
   const containerPort = exposeMatch[1];
-  const runCommand = `docker run -d -p ${port}:${containerPort} ${commitId}`;
-
-  console.log(`[INFO] Running: ${runCommand}`);
-  await new Promise<void>((resolve, reject) => {
-    exec(runCommand, (err, stdout, stderr) => {
-      if (err) {
-        console.error(`[ERROR] Docker run failed:\n${stderr}`);
-        return reject(err);
-      }
-      console.log(stdout);
-      resolve();
-    });
-  });
-
+  runContainer({
+    port,
+    containerPort,
+    name: commitId
+  })
+  
   console.log(`[SUCCESS] Built and started Docker image '${commitId}' from commit '${commitId}'`);
 }
