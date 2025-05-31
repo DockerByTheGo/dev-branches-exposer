@@ -15,7 +15,7 @@ function isMergeSuccessful(payload: any) {
 
 export const app = new Elysia()
     .use(swagger())
-.post("/git-webhook", async ({ request, body }) => {
+.post("/git-webhook/invoke", async ({ request, body }) => {
   const eventType = request.headers.get("x-github-event");
 
   if (!eventType) {
@@ -109,6 +109,9 @@ export const app = new Elysia()
     body: t.Object({
         domain: t.String()
     })
-});
+})
+.post("/admin/getDeployments", async () =>{
+  return new Response(JSON.stringify(deploymentService.getDeployments()))
+})
 
 export const client = treaty<typeof app>("loca")
