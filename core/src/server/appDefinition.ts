@@ -8,11 +8,13 @@ import { deploymentService } from "../services/deployments";
 import { OneOf, Try } from "@custom-express/better-standard-library";
 import { match } from "ts-pattern";
 import { handleWebhook } from "../internals/handleGithubWebhook";
+import swagger from "@elysiajs/swagger";
 function isMergeSuccessful(payload: any) {
   return payload.action === "closed" && payload.pull_request.merged;
 }
 
 export const app = new Elysia()
+    .use(swagger())
 .post("/git-webhook", async ({ request, body }) => {
   const eventType = request.headers.get("x-github-event");
 

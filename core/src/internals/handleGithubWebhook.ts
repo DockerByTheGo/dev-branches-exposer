@@ -1,5 +1,5 @@
-import config from "../config";
-import { deploymentService } from "./services/deployments";
+import config from "../../config";
+import { deploymentService } from "../services/deployments";
 
 export function handleWebhook(data: {
   type: 'push' | 'merge',

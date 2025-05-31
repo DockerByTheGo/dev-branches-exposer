@@ -1,9 +1,11 @@
+"use client"
 import { UseState } from "@custom-express/frontend-thingies";
 import { DeploymentInstance } from "../../../../core/src/scehams-and-types/main";
 import { Card, CardContent } from "admin-panel/components/ui/card";
 import { Button } from "admin-panel/components/ui/button";
 import type React from "react";
 import type { State } from "@custom-express/frontend-thingies/src/react/hooks/useStateAsObject";
+import { Deployments } from "admin-panel/lib/services/main";
 
 // Popup utility
 export function UsePopup(v: { component: () => React.ReactNode }): {
@@ -50,11 +52,25 @@ export const editableDeployment = (
   );
 };
 
-// Main Project Component
+
+export const ConfirmButton: React.FC<{onClick: () => void, text: string}> = ({onClick, text}) => {
+  const confirnation = UseState(false)
+ 
+  
+  return <div>
+    
+    
+    { confirnation.value === false
+    ? <button onClick={() => confirnation.set(true)}>{text}</button> 
+    : <button onClick={onClick}>confirm ?</button>
+    }
+    
+  </div>
+}
+
+
 export default function Project() {
-  const deployments = UseState<DeploymentInstance[]>([
-    { domain: "f", port: 5000 },
-  ]);
+  const deployments = UseState<DeploymentInstance[]>(Deployments.getDeployments());
   const selectedDomain = UseState<string>("");
 
   const updateDeploymentDomain = (oldDomain: string, newDomain: string) => {
@@ -89,6 +105,8 @@ export default function Project() {
           >
             Inspect
           </Button>
+          <ConfirmButton onClick={() => Deployments.remove(deployment)} text="delete">
+          </ConfirmButton>
         </Card>
       ))}
     </div>
