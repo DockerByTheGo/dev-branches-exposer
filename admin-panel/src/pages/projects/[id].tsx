@@ -1,12 +1,12 @@
 "use client";
-import { UseState } from "@custom-express/frontend-thingies";
+import { UseState } from "@blazyts/frontend-thingies";
 import { DeploymentInstance } from "../../../../core/src/scehams-and-types/main";
 import { Card, CardContent } from "admin-panel/components/ui/card";
 import { Button } from "admin-panel/components/ui/button";
 import type React from "react";
-import type { State } from "@custom-express/frontend-thingies/src/react/hooks/useStateAsObject";
+import type { State } from "@blazyts/frontend-thingies/src/react/hooks/useStateAsObject";
 import { Deployments, Services } from "admin-panel/lib/services/main";
-import { ifNotNone } from "@custom-express/better-standard-library";
+import { ifNotNone } from "@blazyts/better-standard-library";
 import { useEffect } from "react";
 
 // Popup utility

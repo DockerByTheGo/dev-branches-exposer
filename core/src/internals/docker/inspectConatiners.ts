@@ -1,4 +1,4 @@
-import { AnotherSmartString } from '@custom-express/better-standard-library';
+import { AnotherSmartString } from '@blazyts/better-standard-library';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 

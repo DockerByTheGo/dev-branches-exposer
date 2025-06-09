@@ -4,7 +4,7 @@ import { z, type ZodRawShape } from 'zod';
 import type { ZodObject } from 'zod';
 import { DeploymentsJson } from '../../scehams-and-types/main';
 import { homedir } from 'os';
-import { tap } from '@custom-express/better-standard-library';
+import { tap } from '@blazyts/better-standard-library';
 type IsJson<T extends string>  = T extends  `${infer T}.json` ? string : never
 export class JsonWriter<T extends Record<string, unknown>, Filename extends string> {
   private filePath: string;

@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import simpleGit from 'simple-git';
 import * as net from 'net';
-import { GroupBuilder } from '@custom-express/better-standard-library';
+import { GroupBuilder } from '@blazyts/better-standard-library';
 import { z } from 'zod';
 
 const git = simpleGit();

@@ -1,7 +1,7 @@
 import { requestFormReset } from "react-dom";
 import type { DeploymentInstance } from "../../../../core/src/scehams-and-types/main";
 import {  API } from "../api";
-import { objectEntries } from "@custom-express/better-standard-library";
+import { objectEntries } from "@blazyts/better-standard-library";
 
 export class Deployments {
     static getDeployments(): DeploymentInstance[]{

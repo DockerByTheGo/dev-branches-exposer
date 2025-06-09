@@ -1,4 +1,4 @@
-import { Optionable } from "@custom-express/better-standard-library";
+import { Optionable } from "@blazyts/better-standard-library";
 import { randomUUIDv7 } from "bun";
 
 export default function config(v: {

@@ -2,7 +2,7 @@ import express from 'express';
 import { createProxyServer } from 'http-proxy';
 import type { Request, Response } from 'express';
 import { g } from '../internals/json-writer/main';
-import { ifNotNone, tap } from '@custom-express/better-standard-library';
+import { ifNotNone, tap } from '@blazyts/better-standard-library';
 import { getSubdomain } from './utils/main';
 
 const app = express();

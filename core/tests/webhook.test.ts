@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { handleWebhook } from '../src/server/main';
 import { config } from '../config';
-import { Optionable } from '@custom-express/better-standard-library';
+import { Optionable } from '@blazyts/better-standard-library';
 
 // Mock the config
 vi.mock('../config', () => ({

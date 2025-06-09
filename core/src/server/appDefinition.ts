@@ -5,7 +5,7 @@ import { type PushEvent, type PullRequestEvent } from "@octokit/webhooks-types";
 import config from "../../config";
 import { randomUUIDv7 } from "bun";
 import { deploymentService } from "../services/deployments";
-import { OneOf, Try } from "@custom-express/better-standard-library";
+import { OneOf, Try } from "@blazyts/better-standard-library";
 import { match } from "ts-pattern";
 import { handleWebhook } from "../internals/handleGithubWebhook";
 import swagger from "@elysiajs/swagger";
